@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pendaftaran Steam Motor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --bg: #1e1e1e; --accent: #007acc; --text: #d4d4d4; --card: #2d2d2d; }
+        body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; }
+        .container { background: var(--card); padding: 30px 20px; margin: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; color: white; }
+        input { padding: 15px; width: 80%; margin-bottom: 20px; border-radius: 5px; border: 2px solid #555; background: #333; color: white; text-align: center; font-size: 18px; font-weight: bold; text-transform: uppercase; outline: none; }
+        input:focus { border-color: var(--accent); }
+        button { background: var(--accent); color: white; border: none; padding: 15px; width: 90%; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .ticket-area { display: none; margin-top: 20px; padding: 20px; background: #fff; color: #000; border-radius: 10px; border: 4px dashed #007acc; }
+        #qrcode { margin: 15px auto; display: flex; justify-content: center; }
+        .warning { font-size: 12px; color: #dc3545; font-weight: bold; margin-top: 15px; }
+        #loading { display: none; color: var(--accent); font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="form-area">
+        <h2>Pendaftaran Steam</h2>
+        <p>Masukkan Plat Motor Anda</p>
+        <input type="text" id="plat-input" placeholder="Cth: B 1234 CD" autocomplete="off">
+        <button onclick="buatKarcis()" id="btn-submit">Generate Barcode</button>
+        <p id="loading">Membuat Barcode...</p>
+    </div>
+
+    <div class="container ticket-area" id="ticket-area">
+        <h3 style="color:black; margin-top:0;">BARCODE PENGAMBILAN</h3>
+        <p style="margin:5px 0; font-weight:bold;">Tunjukkan barcode ini ke kasir</p>
+        <div id="qrcode"></div>
+        <p class="warning">⚠️ SCREENSHOT HALAMAN INI ⚠️</p>
+        <button onclick="location.reload()" style="margin-top:10px; background:#28a745; width:auto; padding:10px 20px; font-size:14px;">Selesai</button>
+    </div>
+
+    <script>
+        function buatKarcis() {
+            let plat = document.getElementById('plat-input').value.toUpperCase().trim();
+            if(!plat) return alert('Isi plat nomor dulu bos!');
+
+            document.getElementById('btn-submit').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            let randomCode = Math.floor(1000 + Math.random() * 9000);
+            let kodeStruk = "STM-" + randomCode;
+
+            // INI URL GOOGLE SCRIPT LU TADI
+            let urlDatabaseLu = "https://script.google.com/macros/s/AKfycbwFNcE0Qliog1Zgn2Kx3COekXCm1jvQ5lyIMlp7jp8YCvWjRwf43qZk3gAevPtx3Ry3Ng/exec";
+
+            fetch(urlDatabaseLu, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Kode: kodeStruk,
+                    Plat: plat,
+                    Waktu: new Date().toLocaleTimeString(),
+                    Status: "Dicuci"
+                })
+            }).then(() => {
+                document.getElementById('form-area').style.display = 'none';
+                document.getElementById('ticket-area').style.display = 'block';
+
+                // BIKIN QR CODE YANG ISINYA "KODE|PLAT"
+                let isiBarcode = kodeStruk + "|" + plat;
+                new QRCode(document.getElementById("qrcode"), {
+                    text: isiBarcode,
+                    width: 200,
+                    height: 200
+                });
+            }).catch(err => {
+                alert("Gagal konek database bray!");
+                document.getElementById('btn-submit').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+    </script>
+</body>
+</html>
